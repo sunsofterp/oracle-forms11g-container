@@ -5,7 +5,7 @@
 echo "Extracting and setting up Forms JDAPI..."
 echo "========================================"
 
-ORACLE_HOME=${ORACLE_HOME:-/opt/oracle/middleware}
+ORACLE_HOME=${ORACLE_HOME:-/opt/oracle}
 JDAPI_DIR="/home/oracle/jdapi"
 
 # Create JDAPI directory
@@ -49,7 +49,7 @@ create_jdapi_wrapper() {
 #!/bin/bash
 # JDAPI wrapper script for Oracle Forms
 
-ORACLE_HOME=${ORACLE_HOME:-/opt/oracle/middleware}
+ORACLE_HOME=${ORACLE_HOME:-/opt/oracle}
 JDAPI_DIR="/home/oracle/jdapi"
 JAVA_HOME=${JAVA_HOME:-/usr/java/jdk1.7.0_291}
 

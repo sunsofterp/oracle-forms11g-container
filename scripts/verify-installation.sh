@@ -5,7 +5,7 @@
 echo "Verifying Oracle Forms 11g installation..."
 echo "========================================="
 
-ORACLE_HOME=${ORACLE_HOME:-/opt/oracle/middleware}
+ORACLE_HOME=${ORACLE_HOME:-/opt/oracle}
 ERRORS=0
 
 # Function to check if a file exists

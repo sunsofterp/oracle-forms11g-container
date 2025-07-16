@@ -4,8 +4,8 @@
 
 # Set up environment variables
 export ORACLE_BASE=/opt/oracle
-export ORACLE_HOME=/opt/oracle/middleware
-export FORMS_HOME=/opt/oracle/middleware
+export ORACLE_HOME=${ORACLE_HOME:-/opt/oracle}
+export FORMS_HOME=${FORMS_HOME:-/opt/oracle}
 export TNS_ADMIN=${TNS_ADMIN:-/opt/oracle/network/admin}
 export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$LD_LIBRARY_PATH
 export PATH=$ORACLE_HOME/bin:$PATH

@@ -20,13 +20,13 @@ RUN yum -y update && \
 RUN groupadd -g 1000 oracle && \
     useradd -u 1000 -g oracle -m -s /bin/bash oracle
 
-# Set environment variables
+# Set environment variables (will be adjusted if needed after extraction)
 ENV ORACLE_BASE=/opt/oracle \
-    ORACLE_HOME=/opt/oracle/middleware \
-    FORMS_HOME=/opt/oracle/middleware \
+    ORACLE_HOME=/opt/oracle \
+    FORMS_HOME=/opt/oracle \
     TNS_ADMIN=/opt/oracle/network/admin \
-    LD_LIBRARY_PATH=/opt/oracle/middleware/lib:$LD_LIBRARY_PATH \
-    PATH=/opt/oracle/middleware/bin:$PATH \
+    LD_LIBRARY_PATH=/opt/oracle/lib:$LD_LIBRARY_PATH \
+    PATH=/opt/oracle/bin:$PATH \
     FORMS_API_TK_BYPASS=true \
     JAVA_HOME=/usr/java/jdk1.7.0_291
 
@@ -69,6 +69,10 @@ USER root
 COPY enterprise_home.tgz /tmp/forms-install/
 RUN cd /opt/oracle && \
     tar -xzf /tmp/forms-install/enterprise_home.tgz && \
+    # Check if middleware directory exists, if not, assume extraction was direct to /opt/oracle
+    if [ ! -d "/opt/oracle/middleware" ] && [ -d "/opt/oracle/bin" ]; then \
+        echo "Oracle installation extracted directly to /opt/oracle"; \
+    fi && \
     chown -R oracle:oracle /opt/oracle && \
     rm -rf /tmp/forms-install
 

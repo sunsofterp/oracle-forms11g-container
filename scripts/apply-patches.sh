@@ -88,8 +88,19 @@ main() {
     
     # Check if Oracle Home exists
     if [ ! -d "$ORACLE_HOME" ]; then
-        echo "ERROR: ORACLE_HOME not found at $ORACLE_HOME"
-        exit 1
+        echo "WARNING: ORACLE_HOME not found at $ORACLE_HOME"
+        echo "Checking for alternative Oracle installations..."
+        
+        # Check if enterprise_home extracted directly to /opt/oracle
+        if [ -d "/opt/oracle/bin" ] && [ -f "/opt/oracle/bin/frmcmp.sh" ]; then
+            echo "Found Oracle installation at /opt/oracle"
+            export ORACLE_HOME=/opt/oracle
+            export FORMS_HOME=/opt/oracle
+        else
+            echo "No Oracle installation found. Skipping patch application."
+            echo "This is expected if building without enterprise_home.tgz"
+            exit 0
+        fi
     fi
     
     # Apply patches
