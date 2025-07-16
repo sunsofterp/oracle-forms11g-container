@@ -94,6 +94,16 @@ RUN if [ -f "/opt/oracle/enterprise_home/forms/templates/scripts/frmcmp.sh" ]; t
         echo "Forms scripts copied to bin directory"; \
     fi
 
+# Move original frmcmp.sh and install wrapper
+USER root
+RUN if [ -f "/opt/oracle/enterprise_home/bin/frmcmp.sh" ]; then \
+        mv /opt/oracle/enterprise_home/bin/frmcmp.sh /opt/oracle/enterprise_home/bin/frmcmp.sh.orig; \
+    fi
+COPY templates/frmcmp-wrapper.sh /opt/oracle/enterprise_home/bin/frmcmp.sh
+RUN chmod +x /opt/oracle/enterprise_home/bin/frmcmp.sh && \
+    chown oracle:oracle /opt/oracle/enterprise_home/bin/frmcmp.sh*
+USER oracle
+
 # Create Forms server directory and add default.env
 USER root
 RUN mkdir -p /opt/oracle/enterprise_home/forms/server
