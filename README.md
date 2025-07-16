@@ -192,9 +192,32 @@ Run the test suites to verify the image:
 
 ## GitHub Actions Workflows
 
+### Required Secrets
+
+Before the workflows can run successfully, you need to configure the following GitHub secrets:
+
+1. **AWS Credentials** (for S3 access):
+   - `AWS_ACCESS_KEY_ID` - Your AWS access key
+   - `AWS_SECRET_ACCESS_KEY` - Your AWS secret key
+
+2. **Docker Hub** (optional, for pushing to Docker Hub):
+   - `DOCKER_USERNAME` - Your Docker Hub username
+   - `DOCKER_PASSWORD` - Your Docker Hub access token
+
+To set these secrets:
+```bash
+# Using GitHub CLI
+gh secret set AWS_ACCESS_KEY_ID --repo sunsofterp/oracle-forms11g-container
+gh secret set AWS_SECRET_ACCESS_KEY --repo sunsofterp/oracle-forms11g-container
+
+# Or via GitHub UI:
+# Go to Settings > Secrets and variables > Actions > New repository secret
+```
+
 ### Build Workflow
 
 The build workflow automatically:
+- Downloads required files from S3
 - Builds the Docker image
 - Runs all tests
 - Pushes to GitHub Container Registry (on main branch)
