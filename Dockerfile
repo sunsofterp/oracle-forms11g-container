@@ -20,13 +20,13 @@ RUN yum -y update && \
 RUN groupadd -g 1000 oracle && \
     useradd -u 1000 -g oracle -m -s /bin/bash oracle
 
-# Set environment variables (will be adjusted if needed after extraction)
+# Set environment variables
 ENV ORACLE_BASE=/opt/oracle \
-    ORACLE_HOME=/opt/oracle \
-    FORMS_HOME=/opt/oracle \
+    ORACLE_HOME=/opt/oracle/enterprise_home \
+    FORMS_HOME=/opt/oracle/enterprise_home \
     TNS_ADMIN=/opt/oracle/network/admin \
-    LD_LIBRARY_PATH=/opt/oracle/lib:$LD_LIBRARY_PATH \
-    PATH=/opt/oracle/bin:$PATH \
+    LD_LIBRARY_PATH=/opt/oracle/enterprise_home/lib:$LD_LIBRARY_PATH \
+    PATH=/opt/oracle/enterprise_home/bin:$PATH \
     FORMS_API_TK_BYPASS=true \
     JAVA_HOME=/usr/java/jdk1.7.0_291
 
@@ -69,10 +69,6 @@ USER root
 COPY enterprise_home.tgz /tmp/forms-install/
 RUN cd /opt/oracle && \
     tar -xzf /tmp/forms-install/enterprise_home.tgz && \
-    # Check if middleware directory exists, if not, assume extraction was direct to /opt/oracle
-    if [ ! -d "/opt/oracle/middleware" ] && [ -d "/opt/oracle/bin" ]; then \
-        echo "Oracle installation extracted directly to /opt/oracle"; \
-    fi && \
     chown -R oracle:oracle /opt/oracle && \
     rm -rf /tmp/forms-install
 
@@ -89,11 +85,16 @@ USER oracle
 # Apply patches if available
 RUN /home/oracle/scripts/apply-patches.sh
 
-# Verify installation (optional - may fail if structure is different)
-RUN /home/oracle/scripts/verify-installation.sh || \
-    (echo "Warning: Verification failed. Checking actual structure..." && \
-     ls -la /opt/oracle/ && \
-     find /opt/oracle -name "frmcmp.sh" -o -name "frmjdapi.jar" | head -10 || true)
+# Set up proper Forms binaries (copy from templates to bin)
+RUN if [ -f "/opt/oracle/enterprise_home/forms/templates/scripts/frmcmp.sh" ]; then \
+        mkdir -p /opt/oracle/enterprise_home/bin && \
+        cp /opt/oracle/enterprise_home/forms/templates/scripts/*.sh /opt/oracle/enterprise_home/bin/ && \
+        chmod +x /opt/oracle/enterprise_home/bin/*.sh && \
+        echo "Forms scripts copied to bin directory"; \
+    fi
+
+# Verify installation
+RUN /home/oracle/scripts/verify-installation.sh
 
 # Extract JDAPI
 RUN /home/oracle/scripts/extract-jdapi.sh

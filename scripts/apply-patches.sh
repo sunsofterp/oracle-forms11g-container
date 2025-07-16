@@ -5,7 +5,7 @@
 
 echo "Starting Oracle Forms patch application..."
 
-ORACLE_HOME=${ORACLE_HOME:-/opt/oracle/middleware}
+ORACLE_HOME=${ORACLE_HOME:-/opt/oracle/enterprise_home}
 PATCH_DIR="/tmp/forms-install/patches"
 S3_BUCKET=${S3_BUCKET:-sunsofterpsetupfiles}
 
@@ -91,11 +91,11 @@ main() {
         echo "WARNING: ORACLE_HOME not found at $ORACLE_HOME"
         echo "Checking for alternative Oracle installations..."
         
-        # Check if enterprise_home extracted directly to /opt/oracle
-        if [ -d "/opt/oracle/bin" ] && [ -f "/opt/oracle/bin/frmcmp.sh" ]; then
-            echo "Found Oracle installation at /opt/oracle"
-            export ORACLE_HOME=/opt/oracle
-            export FORMS_HOME=/opt/oracle
+        # Check if enterprise_home directory exists
+        if [ -d "/opt/oracle/enterprise_home" ] && [ -f "/opt/oracle/enterprise_home/forms/templates/scripts/frmcmp.sh" ]; then
+            echo "Found Oracle installation at /opt/oracle/enterprise_home"
+            export ORACLE_HOME=/opt/oracle/enterprise_home
+            export FORMS_HOME=/opt/oracle/enterprise_home
         else
             echo "No Oracle installation found. Skipping patch application."
             echo "This is expected if building without enterprise_home.tgz"

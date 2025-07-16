@@ -5,7 +5,7 @@
 echo "Extracting and setting up Forms JDAPI..."
 echo "========================================"
 
-ORACLE_HOME=${ORACLE_HOME:-/opt/oracle}
+ORACLE_HOME=${ORACLE_HOME:-/opt/oracle/enterprise_home}
 JDAPI_DIR="/home/oracle/jdapi"
 
 # Create JDAPI directory
@@ -49,7 +49,7 @@ create_jdapi_wrapper() {
 #!/bin/bash
 # JDAPI wrapper script for Oracle Forms
 
-ORACLE_HOME=${ORACLE_HOME:-/opt/oracle}
+ORACLE_HOME=${ORACLE_HOME:-/opt/oracle/enterprise_home}
 JDAPI_DIR="/home/oracle/jdapi"
 JAVA_HOME=${JAVA_HOME:-/usr/java/jdk1.7.0_291}
 
@@ -163,7 +163,13 @@ echo ""
 echo "1. Checking ORACLE_HOME..."
 if [ ! -d "$ORACLE_HOME" ]; then
     echo "✗ ERROR: ORACLE_HOME not found at $ORACLE_HOME"
-    exit 1
+    echo "Attempting to find Oracle installation..."
+    ORACLE_HOME=$(find /opt/oracle -name "frmjdapi.jar" -exec dirname {} \; | xargs dirname | head -1 2>/dev/null)
+    if [ -z "$ORACLE_HOME" ]; then
+        echo "No Oracle installation found. Skipping JDAPI extraction."
+        exit 0
+    fi
+    export ORACLE_HOME
 fi
 echo "✓ ORACLE_HOME: $ORACLE_HOME"
 
