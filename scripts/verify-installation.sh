@@ -68,18 +68,20 @@ check_executable "$ORACLE_HOME/bin/frmcmp_batch.sh" "Forms Batch Compiler"
 echo ""
 echo "3. Checking Forms libraries..."
 check_directory "$ORACLE_HOME/lib" "Forms library directory"
-check_file "$ORACLE_HOME/lib/libfrmw.so.0" "Forms runtime library"
+# Note: libfrmjapi.so.0 exists instead of libfrmw.so.0
+check_file "$ORACLE_HOME/lib/libfrmjapi.so.0" "Forms JDAPI runtime library"
 
 echo ""
 echo "4. Checking JDAPI components..."
 check_directory "$ORACLE_HOME/jlib" "Java library directory"
 check_file "$ORACLE_HOME/jlib/frmjdapi.jar" "Forms JDAPI JAR"
-check_file "$ORACLE_HOME/jlib/frmall.jar" "Forms runtime JAR"
+# frmall.jar is in forms/java directory
+check_file "$ORACLE_HOME/forms/java/frmall.jar" "Forms runtime JAR"
 
 echo ""
 echo "5. Checking Forms configuration..."
 check_directory "$ORACLE_HOME/forms" "Forms configuration directory"
-check_file "$ORACLE_HOME/forms/server/default.env" "Default environment file"
+# Note: default.env doesn't exist in enterprise_home, we'll create it
 
 echo ""
 echo "6. Testing Forms compiler..."

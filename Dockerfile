@@ -51,7 +51,8 @@ RUN mkdir -p /tmp/forms-install
 USER root
 COPY jdk-7u291-linux-x64.rpm /tmp/
 RUN rpm -ivh /tmp/jdk-7u291-linux-x64.rpm && \
-    rm -f /tmp/jdk-7u291-linux-x64.rpm
+    rm -f /tmp/jdk-7u291-linux-x64.rpm && \
+    ln -sf /usr/java/jdk1.7.0_291-amd64 /usr/java/jdk1.7.0_291
 
 # Update PATH to include Java
 ENV PATH=/usr/java/jdk1.7.0_291/bin:$PATH
@@ -92,6 +93,13 @@ RUN if [ -f "/opt/oracle/enterprise_home/forms/templates/scripts/frmcmp.sh" ]; t
         chmod +x /opt/oracle/enterprise_home/bin/*.sh && \
         echo "Forms scripts copied to bin directory"; \
     fi
+
+# Create Forms server directory and add default.env
+USER root
+RUN mkdir -p /opt/oracle/enterprise_home/forms/server
+COPY templates/default.env /opt/oracle/enterprise_home/forms/server/
+RUN chown -R oracle:oracle /opt/oracle/enterprise_home/forms/server
+USER oracle
 
 # Debug installation structure
 RUN /home/oracle/scripts/debug-installation.sh || true

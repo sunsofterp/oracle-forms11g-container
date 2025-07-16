@@ -18,10 +18,9 @@ copy_jdapi_files() {
     
     echo "Copying JDAPI files to $target_dir..."
     
-    # Core JDAPI files
+    # Core JDAPI files from jlib
     local jdapi_files=(
         "frmjdapi.jar"
-        "frmall.jar"
         "frmbld.jar"
         "share.jar"
         "importer.jar"
@@ -37,6 +36,14 @@ copy_jdapi_files() {
             echo "⚠ Warning: $file not found"
         fi
     done
+    
+    # Copy frmall.jar from forms/java directory
+    if [ -f "$ORACLE_HOME/forms/java/frmall.jar" ]; then
+        cp "$ORACLE_HOME/forms/java/frmall.jar" "$target_dir/"
+        echo "✓ Copied frmall.jar from forms/java"
+    else
+        echo "⚠ Warning: frmall.jar not found in forms/java"
+    fi
 }
 
 # Function to create JDAPI wrapper script
