@@ -72,13 +72,14 @@ RUN cd /opt/oracle && \
     chown -R oracle:oracle /opt/oracle && \
     rm -rf /tmp/forms-install
 
-USER oracle
-
-# Copy patches if available
-USER root
+# Create patches directory
 RUN mkdir -p /tmp/patches
-COPY patches* /tmp/patches/ 
-RUN chown -R oracle:oracle /tmp/patches || true
+
+# Copy patches if available (the .gitkeep file ensures the directory exists)
+COPY patches/ /tmp/patches/
+RUN chown -R oracle:oracle /tmp/patches
+
+# Switch to oracle user for remaining steps
 USER oracle
 
 # Apply patches if available
