@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  Simple Oracle Forms sample for testing
+  This is a minimal Forms XML representation
+  Note: Real Oracle Forms files are binary (.fmb) format
+  This XML is for documentation/reference purposes
+-->
+<Module version="11.1.2.2.0" xmlns="http://xmlns.oracle.com/Forms">
+  <FormModule Name="SAMPLE_FORM" Title="Sample Test Form" ConsoleWindow="CONSOLE1" MenuModule="DEFAULT&amp;SMARTBAR">
+    
+    <!-- Data Block -->
+    <Block Name="TEST_BLOCK" DMLDataTargetType="Table" DMLDataTargetName="TEST_TABLE">
+      <Item Name="ID" ItemType="Text Item" DataType="Number" MaximumLength="10" Required="true" 
+            DatabaseItem="true" ColumnName="ID" PrimaryKey="true"/>
+      <Item Name="NAME" ItemType="Text Item" DataType="Char" MaximumLength="50" 
+            DatabaseItem="true" ColumnName="NAME"/>
+      <Item Name="DESCRIPTION" ItemType="Text Item" DataType="Char" MaximumLength="200" 
+            DatabaseItem="true" ColumnName="DESCRIPTION"/>
+      <Item Name="CREATED_DATE" ItemType="Text Item" DataType="Date" 
+            DatabaseItem="true" ColumnName="CREATED_DATE" FormatMask="DD-MON-YYYY"/>
+    </Block>
+    
+    <!-- Canvas -->
+    <Canvas Name="CANVAS1" ViewportWidth="640" ViewportHeight="480" Width="640" Height="480">
+      <Graphics>
+        <Text Name="TITLE_TEXT" Text="Sample Test Form" X="10" Y="10" 
+              Font="Arial" FontSize="14" FontWeight="Bold"/>
+      </Graphics>
+    </Canvas>
+    
+    <!-- Window -->
+    <Window Name="WINDOW1" Title="Sample Form Window" Width="640" Height="480" 
+            XPosition="0" YPosition="0" Modal="false">
+      <Canvas Name="CANVAS1"/>
+    </Window>
+    
+    <!-- Triggers -->
+    <Trigger Name="WHEN-NEW-FORM-INSTANCE" TriggerType="FormLevel">
+      <![CDATA[
+        -- Initialize form
+        MESSAGE('Sample form loaded successfully');
+        SYNCHRONIZE;
+      ]]>
+    </Trigger>
+    
+    <Trigger Name="WHEN-VALIDATE-ITEM" TriggerType="ItemLevel" AttachedTo="TEST_BLOCK.NAME">
+      <![CDATA[
+        -- Validate name is not empty
+        IF :TEST_BLOCK.NAME IS NULL THEN
+          MESSAGE('Name cannot be empty');
+          RAISE FORM_TRIGGER_FAILURE;
+        END IF;
+      ]]>
+    </Trigger>
+    
+    <!-- Program Units -->
+    <ProgramUnit Name="CLEAR_FORM_DATA" ProgramUnitType="Procedure">
+      <![CDATA[
+        PROCEDURE clear_form_data IS
+        BEGIN
+          CLEAR_FORM(NO_VALIDATE);
+          MESSAGE('Form cleared');
+        END clear_form_data;
+      ]]>
+    </ProgramUnit>
+    
+  </FormModule>
+</Module>

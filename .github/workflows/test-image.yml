@@ -1,0 +1,242 @@
+name: Test Oracle Forms 11g Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: 'Docker image name to test'
+        required: false
+        default: 'oracle-forms'
+        type: string
+      image_tag:
+        description: 'Docker image tag to test'
+        required: false
+        default: '11.1.2.2.0'
+        type: string
+      registry:
+        description: 'Registry URL (leave empty for local image)'
+        required: false
+        default: ''
+        type: string
+  schedule:
+    # Run tests weekly on Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+env:
+  DEFAULT_IMAGE: oracle-forms
+  DEFAULT_TAG: 11.1.2.2.0
+
+jobs:
+  test-image:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        test_suite:
+          - name: "Forms Compiler Tests"
+            script: "./test/test-forms-compiler.sh"
+          - name: "JDAPI Tests"
+            script: "./test/test-jdapi.sh"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Determine image to test
+      id: image-info
+      run: |
+        IMAGE_NAME="${{ github.event.inputs.image_name || env.DEFAULT_IMAGE }}"
+        IMAGE_TAG="${{ github.event.inputs.image_tag || env.DEFAULT_TAG }}"
+        REGISTRY="${{ github.event.inputs.registry }}"
+        
+        if [ -n "$REGISTRY" ]; then
+          FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}"
+        else
+          FULL_IMAGE="${IMAGE_NAME}"
+        fi
+        
+        echo "image_name=${FULL_IMAGE}" >> $GITHUB_OUTPUT
+        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+        echo "Testing image: ${FULL_IMAGE}:${IMAGE_TAG}"
+    
+    - name: Pull image if from registry
+      if: github.event.inputs.registry != ''
+      run: |
+        echo "Pulling image from registry..."
+        docker pull "${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}"
+    
+    - name: Check if image exists
+      run: |
+        if docker images | grep -q "${{ steps.image-info.outputs.image_name }}.*${{ steps.image-info.outputs.image_tag }}"; then
+          echo "✓ Image found: ${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}"
+        else
+          echo "✗ Image not found: ${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}"
+          exit 1
+        fi
+    
+    - name: Run ${{ matrix.test_suite.name }}
+      run: |
+        echo "Running ${{ matrix.test_suite.name }}..."
+        ${{ matrix.test_suite.script }} \
+          --image "${{ steps.image-info.outputs.image_name }}" \
+          --tag "${{ steps.image-info.outputs.image_tag }}"
+    
+    - name: Create test report
+      if: always()
+      run: |
+        echo "## Test Report: ${{ matrix.test_suite.name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Image:** \`${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Test Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Test Suite:** ${{ matrix.test_suite.name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: test-image
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Determine image to test
+      id: image-info
+      run: |
+        IMAGE_NAME="${{ github.event.inputs.image_name || env.DEFAULT_IMAGE }}"
+        IMAGE_TAG="${{ github.event.inputs.image_tag || env.DEFAULT_TAG }}"
+        REGISTRY="${{ github.event.inputs.registry }}"
+        
+        if [ -n "$REGISTRY" ]; then
+          FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}"
+        else
+          FULL_IMAGE="${IMAGE_NAME}"
+        fi
+        
+        echo "image_name=${FULL_IMAGE}" >> $GITHUB_OUTPUT
+        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+    
+    - name: Integration test - Compile sample form
+      run: |
+        echo "Creating sample form..."
+        cat > test_form.sql << 'EOF'
+        -- This would normally be a Forms XML or source file
+        -- For testing, we'll just verify the compiler runs
+        EOF
+        
+        echo "Testing form compilation..."
+        docker run --rm \
+          -v $(pwd):/work \
+          "${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}" \
+          bash -c "cd /work && frmcmp.sh help=yes | grep -q 'Forms Compiler' && echo '✓ Compiler is functional'"
+    
+    - name: Integration test - JDAPI functionality
+      run: |
+        echo "Testing JDAPI functionality..."
+        
+        # Create a test Java program
+        cat > TestJdapi.java << 'EOF'
+        import oracle.forms.jdapi.*;
+        
+        public class TestJdapi {
+            public static void main(String[] args) {
+                try {
+                    System.out.println("Initializing JDAPI...");
+                    Jdapi.setFailSubclassLoad(false);
+                    Jdapi.setFailLibraryLoad(false);
+                    
+                    System.out.println("JDAPI Version: " + Jdapi.getVersion());
+                    System.out.println("✓ JDAPI integration test passed");
+                } catch (Exception e) {
+                    System.err.println("✗ JDAPI integration test failed: " + e);
+                    System.exit(1);
+                }
+            }
+        }
+        EOF
+        
+        # Run the test
+        docker run --rm \
+          -v $(pwd):/work \
+          "${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}" \
+          bash -c "cd /work && \
+                   javac -cp /home/oracle/jdapi/frmjdapi.jar TestJdapi.java && \
+                   java -cp .:/home/oracle/jdapi/frmjdapi.jar TestJdapi"
+    
+    - name: Performance test
+      run: |
+        echo "Running performance test..."
+        
+        # Test container startup time
+        START_TIME=$(date +%s.%N)
+        docker run --rm "${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}" echo "Container started"
+        END_TIME=$(date +%s.%N)
+        
+        STARTUP_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+        echo "Container startup time: ${STARTUP_TIME}s"
+        
+        # Check if startup time is reasonable (less than 5 seconds)
+        if (( $(echo "$STARTUP_TIME < 5" | bc -l) )); then
+          echo "✓ Startup time is acceptable"
+        else
+          echo "⚠ Startup time is slow (${STARTUP_TIME}s)"
+        fi
+        
+        # Check image size
+        IMAGE_SIZE=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep "${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}" | awk '{print $2}')
+        echo "Image size: $IMAGE_SIZE"
+        
+        echo "## Performance Metrics" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Startup Time:** ${STARTUP_TIME}s" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image Size:** $IMAGE_SIZE" >> $GITHUB_STEP_SUMMARY
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: test-image
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Determine image to test
+      id: image-info
+      run: |
+        IMAGE_NAME="${{ github.event.inputs.image_name || env.DEFAULT_IMAGE }}"
+        IMAGE_TAG="${{ github.event.inputs.image_tag || env.DEFAULT_TAG }}"
+        REGISTRY="${{ github.event.inputs.registry }}"
+        
+        if [ -n "$REGISTRY" ]; then
+          FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}"
+        else
+          FULL_IMAGE="${IMAGE_NAME}"
+        fi
+        
+        echo "image_name=${FULL_IMAGE}" >> $GITHUB_OUTPUT
+        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Check for running as root
+      run: |
+        echo "Checking if container runs as root..."
+        USER=$(docker run --rm "${{ steps.image-info.outputs.image_name }}:${{ steps.image-info.outputs.image_tag }}" whoami)
+        
+        if [ "$USER" = "root" ]; then
+          echo "⚠ WARNING: Container runs as root user"
+          echo "## Security Warning" >> $GITHUB_STEP_SUMMARY
+          echo "Container runs as root user. Consider running as non-root user." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✓ Container runs as non-root user: $USER"
+        fi

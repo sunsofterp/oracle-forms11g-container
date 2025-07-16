@@ -1,0 +1,23 @@
+# Downloaded installation files
+enterprise_home.tgz
+jdk-7u291-linux-x64.rpm
+*.rpm
+*.tar.gz
+*.zip
+
+# Patch files
+p18178044_111220_Linux-x86-64.zip
+
+# Test artifacts
+*.fmb
+*.fmx
+*.class
+test_jdapi.fmb
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+
+# Docker build context
+.dockerignore

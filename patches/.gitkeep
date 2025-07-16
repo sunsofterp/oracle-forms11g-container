@@ -1,0 +1,3 @@
+# This directory contains Oracle Forms patches
+# Patches should be placed here before building the Docker image
+# Example: p18178044_111220_Linux-x86-64.zip
