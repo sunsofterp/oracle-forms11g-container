@@ -33,6 +33,19 @@ find /opt/oracle -name "libfrmw.so*" -type f 2>/dev/null | while read file; do
     echo "Found: $file"
     ls -la "$file"
 done
+find /opt/oracle -name "libfrm*.so*" -type f 2>/dev/null | head -10 | while read file; do
+    echo "Found Forms lib: $file"
+done
+echo ""
+
+# Check lib directories
+echo "3a. Checking lib directories..."
+for dir in /opt/oracle/enterprise_home/lib /opt/oracle/enterprise_home/forms/lib; do
+    if [ -d "$dir" ]; then
+        echo "Contents of $dir:"
+        ls -la "$dir" | grep -E "(libfrm|\.so)" | head -10
+    fi
+done
 echo ""
 
 # Look for JDAPI files
@@ -41,6 +54,18 @@ find /opt/oracle -name "frmjdapi.jar" -type f 2>/dev/null | while read file; do
     echo "Found: $file"
     ls -la "$file"
 done
+find /opt/oracle -name "frmall.jar" -type f 2>/dev/null | while read file; do
+    echo "Found frmall.jar: $file"
+    ls -la "$file"
+done
+echo ""
+
+# Check jlib directory
+echo "4a. Checking jlib directory..."
+if [ -d "/opt/oracle/enterprise_home/jlib" ]; then
+    echo "Contents of /opt/oracle/enterprise_home/jlib (Forms-related jars):"
+    ls -la /opt/oracle/enterprise_home/jlib | grep -E "(frm|forms)" | head -10
+fi
 echo ""
 
 # Check Forms directories
@@ -48,6 +73,17 @@ echo "5. Checking Forms directory structure..."
 if [ -d "/opt/oracle/enterprise_home/forms" ]; then
     echo "Forms directory structure:"
     find /opt/oracle/enterprise_home/forms -type d | head -20
+fi
+echo ""
+
+# Check for environment files
+echo "5a. Searching for environment files..."
+find /opt/oracle -name "*.env" -type f 2>/dev/null | grep -i forms | head -10 | while read file; do
+    echo "Found env file: $file"
+done
+if [ -d "/opt/oracle/enterprise_home/forms/server" ]; then
+    echo "Contents of forms/server directory:"
+    ls -la /opt/oracle/enterprise_home/forms/server 2>/dev/null | head -10
 fi
 echo ""
 
